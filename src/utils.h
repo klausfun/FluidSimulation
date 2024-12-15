@@ -4,7 +4,6 @@
 #include <random>
 #include <array>
 
-
 constexpr std::array<std::pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
 
 template<typename T>
@@ -14,5 +13,9 @@ std::mt19937 rnd(1337);
 
 template<typename T>
 T random01() {
-    return T::from_raw((rnd() & ((1 << 16) - 1)));
+    if constexpr (std::is_same_v<T, float> or std::is_same_v<T, double>) {
+        return T(rnd()) / T(std::mt19937::max());
+    } else {
+        return T::from_raw((rnd() & ((1LL << T::k) - 1LL)));
+    }
 }

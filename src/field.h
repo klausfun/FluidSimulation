@@ -4,7 +4,7 @@
 #include <cassert>
 #include <cstring>
 
-#include "types.h"
+#include "fixed.h"
 #include "vectorField.h"
 #include "utils.h"
 
@@ -14,8 +14,8 @@ class Field {
 
     char field[N_val][K_val]{};
 
-    VectorField<VType, N_val, K_val> velocity = {};
-    VectorField<VFType, N_val, K_val> velocity_flow = {};
+    VectorField <VType, N_val, K_val> velocity = {};
+    VectorField <VFType, N_val, K_val> velocity_flow = {};
 
     int64_t dirs[N_val][K_val]{};
     int last_use[N_val][K_val]{};
@@ -26,7 +26,7 @@ class Field {
     VType g = get_g<VType>();
 
 public:
-    Field(const std::array<std::string, N_val*K_val>& input_field) : N(N_val), K(K_val) {
+    Field(const std::array<std::string, N_val * K_val> &input_field) : N(N_val), K(K_val) {
         for (size_t i = 0; i < N; ++i) {
             strncpy(field[i], input_field[i].c_str(), K);
             field[i][K] = '\0';
@@ -75,7 +75,7 @@ private:
     void propagate_stop(int x, int y, bool force = false) {
         if (!force) {
             bool stop = true;
-            for (auto [dx, dy] : deltas) {
+            for (auto [dx, dy]: deltas) {
                 int nx = x + dx, ny = y + dy;
                 if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) > int64_t(0)) {
                     stop = false;
@@ -87,7 +87,7 @@ private:
             }
         }
         last_use[x][y] = UT;
-        for (auto [dx, dy] : deltas) {
+        for (auto [dx, dy]: deltas) {
             int nx = x + dx, ny = y + dy;
             if (field[nx][ny] == '#' || last_use[nx][ny] == UT || velocity.get(x, y, dx, dy) > int64_t(0)) {
                 continue;
@@ -123,13 +123,13 @@ private:
 
     std::tuple<VFType, bool, std::pair<int, int>> propagate_flow(int x, int y, VFType lim) {
         last_use[x][y] = UT - 1;
-        VFType ret;
-        for (auto [dx, dy] : deltas) {
+        VFType ret{};
+        for (auto [dx, dy]: deltas) {
             int nx = x + dx, ny = y + dy;
             if (field[nx][ny] != '#' && last_use[nx][ny] < UT) {
                 VType cap = velocity.get(x, y, dx, dy);
                 VFType flow = velocity_flow.get(x, y, dx, dy);
-                if (flow == cap) {
+                if (fabs(flow - VFType(cap)) <= 0.0001) {
                     continue;
                 }
                 // assert(v >= velocity_flow.get(x, y, dx, dy));
@@ -146,7 +146,7 @@ private:
                     velocity_flow.add(x, y, dx, dy, t);
                     last_use[x][y] = UT;
                     // cerr << x << " " << y << " -> " << nx << " " << ny << " " << t << " / " << lim << "\n";
-                    return {t, prop && end != std::pair(x, y), end};
+                    return {t, end != std::pair(x, y), end};
                 }
             }
         }
@@ -224,19 +224,19 @@ private:
             for (size_t y = 0; y < K; ++y) {
                 if (field[x][y] == '#')
                     continue;
-                for (auto [dx, dy] : deltas) {
+                for (auto [dx, dy]: deltas) {
                     int nx = x + dx, ny = y + dy;
                     if (field[nx][ny] != '#' && old_p[nx][ny] < old_p[x][y]) {
                         PType delta_p = old_p[x][y] - old_p[nx][ny];
                         PType force = delta_p;
                         VType &contr = velocity.get(nx, ny, -dx, -dy);
-                        if (contr * rho[(int) field[nx][ny]] >= force) {
-                            contr -= force / rho[(int) field[nx][ny]];
+                        if (PType(contr) * rho[(int) field[nx][ny]] >= force) {
+                            contr -= VType(force / rho[(int) field[nx][ny]]);
                             continue;
                         }
-                        force -= contr * rho[(int) field[nx][ny]];
+                        force -= PType(contr) * rho[(int) field[nx][ny]];
                         contr = int64_t(0);
-                        velocity.add(x, y, dx, dy, force / rho[(int) field[x][y]]);
+                        velocity.add(x, y, dx, dy, VType(force / rho[(int) field[x][y]]));
                         p[x][y] -= force / dirs[x][y];
                         total_delta_p -= force / dirs[x][y];
                     }
@@ -269,13 +269,13 @@ private:
             for (size_t y = 0; y < K; ++y) {
                 if (field[x][y] == '#')
                     continue;
-                for (auto [dx, dy] : deltas) {
+                for (auto [dx, dy]: deltas) {
                     VType old_v = velocity.get(x, y, dx, dy);
                     VFType new_v = velocity_flow.get(x, y, dx, dy);
                     if (old_v > int64_t(0)) {
                         assert(VType(new_v) <= old_v);
                         velocity.get(x, y, dx, dy) = VType(new_v);
-                        auto force = (old_v - VType(new_v)) * rho[(int) field[x][y]];
+                        auto force = PType(old_v - VType(new_v)) * rho[(int) field[x][y]];
                         if (field[x][y] == '.')
                             force *= 0.8;
                         if (field[x + dx][y + dy] == '#') {

@@ -2,8 +2,10 @@
 #include <array>
 #include <cstring>
 
-#include "src/types.h"
+//#include "src/types.h"
 #include "src/field.h"
+#include "src/fixed.h"
+#include "src/fastFixed.h"
 
 constexpr size_t N = 36, K = 84;
 // constexpr size_t N = 14, M = 5;
@@ -68,7 +70,7 @@ constexpr size_t T = 1'000'000;
 
 int main() {
 
-    Field<Fixed<32, 16>, Fixed<32, 16>, Fixed<32, 16>, N, K> field_object(field);
+    Field<Fixed<64, 8>, FastFixed<25, 11>, double, N, K> field_object(field);
 
     for (size_t i = 0; i < T; ++i) {
         field_object.next(i);
