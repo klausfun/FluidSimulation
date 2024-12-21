@@ -17,9 +17,20 @@ struct VectorField {
     }
 
     T &get(int x, int y, int dx, int dy) {
-        size_t i = std::ranges::find(deltas, std::pair(dx, dy)) - deltas.begin();
-        assert(i < deltas.size());
-        return v[x][y][i];
+//        size_t i = std::ranges::find(deltas, std::pair(dx, dy)) - deltas.begin();
+//        assert(i < deltas.size());
+//        return v[x][y][i];
+
+        switch (dx*4 + dy) {
+            case -1:
+                return v[x][y][0];
+            case 1:
+                return v[x][y][1];
+            case -4:
+                return v[x][y][2];
+            case 4:
+                return v[x][y][3];
+        }
     }
 
     void clear();

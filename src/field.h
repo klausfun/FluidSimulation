@@ -287,10 +287,11 @@ std::tuple<VFType, bool, std::pair<int, int>> Field<PType, VType, VFType, N_val,
             if (fabs(double(flow - VFType(cap))) <= 0.0001) continue;
             // assert(v >= velocity_flow.get(x, y, dx, dy));
             VFType vp = std::min(lim, VFType(cap) - flow);
+            if (vp < 0.001) continue;
             if (last_use[nx][ny] == UT - 1) {
                 velocity_flow.add(x, y, dx, dy, vp);
                 last_use[x][y] = UT;
-                // cerr << x << " " << y << " -> " << nx << " " << ny << " " << vp << " / " << lim << "\n";
+//                 cerr << x << " " << y << " -> " << nx << " " << ny << " " << vp << " / " << lim << "\n";
                 return {vp, 1, {nx, ny}};
             }
             auto [t, prop, end] = propagate_flow(nx, ny, vp);
