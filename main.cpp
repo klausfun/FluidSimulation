@@ -1,78 +1,54 @@
-#include <iostream>
-#include <array>
-#include <cstring>
+#include <memory>
+#include <csignal>
+#include <nlohmann/json.hpp>
 
-//#include "src/types.h"
 #include "src/field.h"
-#include "src/fixed.h"
-#include "src/fastFixed.h"
+#include "src/parser.h"
+#include "src/typeGeneration.h"
 
-constexpr size_t N = 36, K = 84;
-// constexpr size_t N = 14, M = 5;
+constexpr auto simulators = generateSimulators();
+constexpr auto types = generateTypes();
+using json = nlohmann::json;
 
-// char field[N][M + 1] = {
-//     "#####",
-//     "#.  #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#...#",
-//     "#####",
-//     "#   #",
-//     "#   #",
-//     "#   #",
-//     "#####",
-// };
+bool save = false;
 
-std::array<std::string, N*K> field = {
-        "####################################################################################",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                       .........                                  #",
-        "#..............#            #           .........                                  #",
-        "#..............#            #           .........                                  #",
-        "#..............#            #           .........                                  #",
-        "#..............#            #                                                      #",
-        "#..............#            #                                                      #",
-        "#..............#            #                                                      #",
-        "#..............#            #                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............#                                                      #",
-        "#..............#............################                     #                 #",
-        "#...........................#....................................#                 #",
-        "#...........................#....................................#                 #",
-        "#...........................#....................................#                 #",
-        "##################################################################                 #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "#                                                                                  #",
-        "####################################################################################",
-};
+void handler(int x) {
+    save = true;
+}
 
-constexpr size_t T = 1'000'000;
+int main(int argc, char* argv[]) {
+    signal(SIGINT, handler);
 
-int main() {
+    SimSetts st = parseArgs(argc, argv);
+    FieldConfig info(st.input_filename);
 
-    Field<Fixed<64, 8>, FastFixed<25, 11>, double, N, K> field_object(field);
+    tuple need = {st.p_type, st.v_type, st.vf_type, info.h, info.w};
+    auto index = std::find(types.begin(), types.end(), need) - types.begin();
+    if (index == types.size()) {
+        need = {st.p_type, st.v_type, st.vf_type, 0, 0};
+        index = std::find(types.begin(), types.end(), need) - types.begin();
+    }
+    if (index == types.size()) {
+        std::cout << "Simulator with chosen types does not exist\n";
+        exit(EXIT_FAILURE);
+    }
 
-    for (size_t i = 0; i < T; ++i) {
-        field_object.next(i);
+    auto field = simulators[index]();
+    field->init(info, st);
+
+    for (size_t i = info.tick; i < 1000000; ++i) {
+        if (save) {
+            field->save(st.output_filename, i);
+
+            std::cout << "Enter any number to continue: ";
+
+            save = false;
+            int tmp;
+            std::cin >> tmp;
+
+            std::cout << std::endl;
+        }
+
+        field->nextTick(i);
     }
 }

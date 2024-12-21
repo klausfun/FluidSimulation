@@ -1,9 +1,13 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.22.1)
+
 project(FluidSimulation)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
-ADD_COMPILE_OPTIONS("-DTYPES=FLOAT,DOUBLE,FIXED(32, 16),FIXED(64, 8),FAST_FIXED(25, 11)")
-ADD_COMPILE_OPTIONS("-DSIZES=S(36, 84),S(777,5)")
+set(CMAKE_CXX_FLAGS -O4)
+add_definitions("-DTYPES=FLOAT,DOUBLE,FIXED(32,16),FAST_FIXED(48,16)")
+add_definitions("-DSIZES=S(24,84),S(50,50)")
 
-add_executable(FluidSimulation main.cpp)
+include_directories("src/")
+
+add_executable(main main.cpp)

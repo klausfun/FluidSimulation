@@ -5,10 +5,12 @@
 #include <cassert>
 
 #include "utils.h"
+#include "wrapperArray.h"
 
-template<typename T, int N, int K>
+template<typename T, int NVal, int KVal>
 struct VectorField {
-    std::array<T, deltas.size()> v[N][K];
+    size_t N = NVal, K = KVal;
+    Array<std::array<T, deltas.size()>, NVal, KVal> v;
 
     T &add(int x, int y, int dx, int dy, T dv) {
         return get(x, y, dx, dy) += dv;
@@ -19,4 +21,23 @@ struct VectorField {
         assert(i < deltas.size());
         return v[x][y][i];
     }
+
+    void clear();
+    void init(size_t n, size_t k);
 };
+
+template <typename Type, int NVal, int KVal>
+void VectorField<Type, NVal, KVal>::clear() {
+    for (size_t x = 0; x < N; x++) {
+        for (size_t y = 0; y < K; y++) {
+            for (size_t z = 0; z < deltas.size(); z++) {
+                v[x][y][z] = Type();
+            }
+        }
+    }
+}
+
+template <typename Type, int NVal, int KVal>
+void VectorField<Type, NVal, KVal>::init(size_t n, size_t k) {
+    N = n; K = k; v.init(n, k);
+}
