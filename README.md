@@ -30,6 +30,10 @@
   
 Перед компиляцией можно указать тип данных и параметры точности в файле CMakeLists.txt через переменные DTYPES и DSIZES.
 
+#### Управление
+- Сохранение промежуточного результата: отправьте сигнал SIGINT комбинацией клавиш Ctrl + C.
+- Завершение программы: отправьте сигнал завершения Ctrl + 4.
+
 
 1. `git clone --recurse-submodules https://github.com/klausfun/FluidSimulation`
 2. `cd FluidSimulation`
