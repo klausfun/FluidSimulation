@@ -1,9 +1,11 @@
+
 #pragma once
 
 #include "fixed.h"
+#include "fastFixed.h"
 #include <array>
 
-#include "typeGeneration.h"
+#include "typesAndField.h"
 
 using std::array;
 
@@ -15,32 +17,26 @@ constexpr array t{TYPES};
 constexpr array s{DYNAMIC, SIZES};
 
 template <int num>
-struct stNumberToType {
-    static auto get() {
-        if constexpr (num == FLOAT) {
-            return std::type_identity<float>{};
-        } else if constexpr (num == DOUBLE) {
-            return std::type_identity<double>{};
-        } else if constexpr (num < 10000) {
-            return std::type_identity<Fixed<num/100,num%100>>{};
-        } else {
-            return std::type_identity<FastFixed<num/10000,num%10000>>{};
-        }
-    }
-};
-
-template <int num>
-using numType = typename decltype(stNumberToType<num>::get())::type;
+using type = std::conditional_t<
+        num == FLOAT, float,
+        std::conditional_t<
+                num == DOUBLE, double,
+                std::conditional_t<
+                        num < 10000, Fixed<num/100, num%100>,
+                        FastFixed<num/10000, num%10000>
+                >
+        >
+>;
 
 template <typename P, typename V, typename VF, size_t N, size_t M>
-constexpr std::unique_ptr<AbstractField> generateSim() {
+std::unique_ptr<AbstractField> generateSim() {
     return std::make_unique<Field<P, V, VF, N, M>>();
 }
 
 template <int index>
 constexpr auto simulatorsGenerator() {
     auto res = simulatorsGenerator<index+1>();
-    res[index] = generateSim<numType<t[index/(t.size()*t.size()*s.size())]>, numType<t[index%(t.size()*t.size()*s.size())/(t.size()*s.size())]>, numType<t[index%(t.size()*s.size())/s.size()]>, s[index%s.size()].first, s[index%s.size()].second>;
+    res[index] = generateSim<type<t[index/(t.size()*t.size()*s.size())]>, type<t[index%(t.size()*t.size()*s.size())/(t.size()*s.size())]>, type<t[index%(t.size()*s.size())/s.size()]>, s[index%s.size()].first, s[index%s.size()].second>;
     return res;
 }
 

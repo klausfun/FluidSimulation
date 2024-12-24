@@ -4,10 +4,11 @@
 
 #include "src/field.h"
 #include "src/parser.h"
-#include "src/typeGeneration.h"
+#include "src/typesAndField.h"
 
-constexpr auto simulators = generateSimulators();
-constexpr auto types = generateTypes();
+auto simulators = generateSimulators();
+auto types = generateTypes();
+
 using json = nlohmann::json;
 
 bool save = false;
@@ -19,13 +20,16 @@ void handler(int x) {
 int main(int argc, char* argv[]) {
     signal(SIGINT, handler);
 
-    SimSetts st = parseArgs(argc, argv);
-    FieldConfig info(st.input_filename);
+    Parser parser{};
+    parser.parseArgs(argc, argv);
+    std::cout << parser.p_type << parser.v_type << parser.vf_type << std::endl;
 
-    tuple need = {st.p_type, st.v_type, st.vf_type, info.h, info.w};
+    FieldConfig info(parser.input_filename);
+
+    tuple need = {parser.p_type, parser.v_type, parser.vf_type, info.h, info.w};
     auto index = std::find(types.begin(), types.end(), need) - types.begin();
     if (index == types.size()) {
-        need = {st.p_type, st.v_type, st.vf_type, 0, 0};
+        need = {parser.p_type, parser.v_type, parser.vf_type, 0, 0};
         index = std::find(types.begin(), types.end(), need) - types.begin();
     }
     if (index == types.size()) {
@@ -33,12 +37,13 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+//    auto& field = simulators[index];
     auto field = simulators[index]();
-    field->init(info, st);
+    field->init(info, parser);
 
     for (size_t i = info.tick; i < 1000000; ++i) {
         if (save) {
-            field->save(st.output_filename, i);
+            field->save(parser.output_filename, i);
 
             std::cout << "Enter any number to continue: ";
 
