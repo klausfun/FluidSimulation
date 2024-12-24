@@ -107,11 +107,11 @@ struct Field final: AbstractField {
         if (!out_name.empty() && (++cur_tick == n_ticks)) {
             ofstream out(out_name);
 
-            auto cnt = std::count_if(rho, rho+256, [](auto i){return i!=0l;});
+            auto cnt = std::count_if(rho, rho+256, [](auto i){return i != int64_t(0);});
 
             out << N << " " << K << " " << g << " " << cnt << "\n";
             for (int i = 0; i < 256; i++) {
-                if (rho[i] == 0l) continue;
+                if (rho[i] == int64_t(0)) continue;
                 out << ((uint8_t)i) << " " << rho[i] << "\n";
             }
 
